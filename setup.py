@@ -12,7 +12,7 @@ setup(
         packages=find_packages(),
         platforms=["all"],
         install_requires=[
-            "gym>=0.15.4,<=0.24.1",
+            "gymnasium>=1.0.0",
             "matplotlib",
             "numpy",
             "pandas",

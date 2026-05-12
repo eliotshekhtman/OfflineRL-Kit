@@ -1,6 +1,6 @@
 import numpy as np
 
-from gym.envs.mujoco import mujoco_env
+from gymnasium.envs.mujoco import mujoco_env
 from typing import Callable, List, Tuple, Dict
 
 
@@ -27,5 +27,5 @@ class MujocoOracleDynamics(object):
             raise ValueError
         self.env.reset()
         self._set_state_from_obs(obs)
-        next_obs, reward, terminal, info = self.env.step(action)
+        next_obs, reward, terminal, _, info = self.env.step(action)
         return next_obs, reward, terminal, info

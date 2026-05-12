@@ -3,7 +3,7 @@ import os
 
 import numpy as np
 import torch
-import gym
+import gymnasium as gym
 
 from typing import Optional, Dict, List, Tuple
 from tqdm import tqdm
@@ -97,11 +97,9 @@ class MBPolicyTrainer:
             eval_info = self._evaluate()
             ep_reward_mean, ep_reward_std = np.mean(eval_info["eval/episode_reward"]), np.std(eval_info["eval/episode_reward"])
             ep_length_mean, ep_length_std = np.mean(eval_info["eval/episode_length"]), np.std(eval_info["eval/episode_length"])
-            norm_ep_rew_mean = self.eval_env.get_normalized_score(ep_reward_mean) * 100
-            norm_ep_rew_std = self.eval_env.get_normalized_score(ep_reward_std) * 100
-            last_10_performance.append(norm_ep_rew_mean)
-            self.logger.logkv("eval/normalized_episode_reward", norm_ep_rew_mean)
-            self.logger.logkv("eval/normalized_episode_reward_std", norm_ep_rew_std)
+            last_10_performance.append(ep_reward_mean)
+            self.logger.logkv("eval/episode_reward", ep_reward_mean)
+            self.logger.logkv("eval/episode_reward_std", ep_reward_std)
             self.logger.logkv("eval/episode_length", ep_length_mean)
             self.logger.logkv("eval/episode_length_std", ep_length_std)
             self.logger.set_timestep(num_timesteps)
@@ -119,26 +117,26 @@ class MBPolicyTrainer:
 
     def _evaluate(self) -> Dict[str, List[float]]:
         self.policy.eval()
-        obs = self.eval_env.reset()
+        obs, _ = self.eval_env.reset()
         eval_ep_info_buffer = []
         num_episodes = 0
         episode_reward, episode_length = 0, 0
 
         while num_episodes < self._eval_episodes:
             action = self.policy.select_action(obs.reshape(1, -1), deterministic=True)
-            next_obs, reward, terminal, _ = self.eval_env.step(action.flatten())
+            next_obs, reward, terminated, truncated, _ = self.eval_env.step(action.flatten())
             episode_reward += reward
             episode_length += 1
 
             obs = next_obs
 
-            if terminal:
+            if terminated or truncated:
                 eval_ep_info_buffer.append(
                     {"episode_reward": episode_reward, "episode_length": episode_length}
                 )
                 num_episodes +=1
                 episode_reward, episode_length = 0, 0
-                obs = self.eval_env.reset()
+                obs, _ = self.eval_env.reset()
         
         return {
             "eval/episode_reward": [ep_info["episode_reward"] for ep_info in eval_ep_info_buffer],
