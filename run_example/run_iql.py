@@ -38,7 +38,6 @@ def get_args():
     parser.add_argument("--temperature", type=float, default=3.0)
     parser.add_argument("--epoch", type=int, default=1000)
     parser.add_argument("--step-per-epoch", type=int, default=1000)
-    parser.add_argument("--eval_episodes", type=int, default=10)
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
 
@@ -176,13 +175,11 @@ def train(args=get_args()):
     # create policy trainer
     policy_trainer = MFPolicyTrainer(
         policy=policy,
-        eval_env=env,
         buffer=buffer,
         logger=logger,
         epoch=args.epoch,
         step_per_epoch=args.step_per_epoch,
         batch_size=args.batch_size,
-        eval_episodes=args.eval_episodes,
         lr_scheduler=lr_scheduler
     )
 

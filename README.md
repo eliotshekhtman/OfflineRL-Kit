@@ -146,13 +146,11 @@ Load all components into the trainer and train it:
 ```python
 policy_trainer = MFPolicyTrainer(
     policy=policy,
-    eval_env=env,
     buffer=buffer,
     logger=logger,
     epoch=args.epoch,
     step_per_epoch=args.step_per_epoch,
-    batch_size=args.batch_size,
-    eval_episodes=args.eval_episodes
+    batch_size=args.batch_size
 )
 
 policy_trainer.train()

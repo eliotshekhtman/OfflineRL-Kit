@@ -29,7 +29,9 @@ class MOBILEPolicy(BasePolicy):
         penalty_coef: float = 1.0,
         num_samples: int = 10,
         deterministic_backup: bool = False,
-        max_q_backup: bool = False
+        max_q_backup: bool = False,
+        clamp_target_q: bool = True,
+        return_shift: float = 0.0
     ) -> None:
 
         super().__init__()
@@ -57,6 +59,8 @@ class MOBILEPolicy(BasePolicy):
         self._num_samples = num_samples
         self._deteterministic_backup = deterministic_backup
         self._max_q_backup = max_q_backup
+        self._clamp_target_q = clamp_target_q
+        self._return_shift = return_shift
 
     def train(self) -> None:
         self.actor.train()
@@ -170,8 +174,10 @@ class MOBILEPolicy(BasePolicy):
                 next_q = torch.min(next_qs, 1)[0].reshape(-1, 1)
                 if not self._deteterministic_backup:
                     next_q -= self._alpha * next_log_probs
-            target_q = (rewards - self._penalty_coef * penalty) + self._gamma * (1 - terminals) * next_q
-            target_q = torch.clamp(target_q, 0, None)
+            shifted_rewards = rewards + (1.0 - self._gamma) * self._return_shift
+            target_q = (shifted_rewards - self._penalty_coef * penalty) + self._gamma * (1 - terminals) * next_q
+            if self._clamp_target_q:
+                target_q = torch.clamp(target_q, 0, None)
 
         critic_loss = ((qs - target_q) ** 2).mean()
         self.critics_optim.zero_grad()

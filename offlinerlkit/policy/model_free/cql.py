@@ -103,7 +103,7 @@ class CQLPolicy(SACPolicy):
             self.alpha_optim.zero_grad()
             alpha_loss.backward()
             self.alpha_optim.step()
-            self._alpha = self._log_alpha.detach().exp()
+            self._alpha = torch.clamp(self._log_alpha.detach().exp(), 0.0, 1.0)
         
         # compute td error
         if self._max_q_backup:
@@ -150,11 +150,12 @@ class CQLPolicy(SACPolicy):
         next_obs_pi_value1, next_obs_pi_value2 = self.calc_pi_values(tmp_next_obss, tmp_obss)
         random_value1, random_value2 = self.calc_random_values(tmp_obss, random_actions)
 
-        for value in [
-            obs_pi_value1, obs_pi_value2, next_obs_pi_value1, next_obs_pi_value2,
-            random_value1, random_value2
-        ]:
-            value.reshape(batch_size, self._num_repeat_actions, 1)
+        obs_pi_value1 = obs_pi_value1.reshape(batch_size, self._num_repeat_actions, 1)
+        obs_pi_value2 = obs_pi_value2.reshape(batch_size, self._num_repeat_actions, 1)
+        next_obs_pi_value1 = next_obs_pi_value1.reshape(batch_size, self._num_repeat_actions, 1)
+        next_obs_pi_value2 = next_obs_pi_value2.reshape(batch_size, self._num_repeat_actions, 1)
+        random_value1 = random_value1.reshape(batch_size, self._num_repeat_actions, 1)
+        random_value2 = random_value2.reshape(batch_size, self._num_repeat_actions, 1)
         
         # cat_q shape: (batch_size, 3 * num_repeat, 1)
         cat_q1 = torch.cat([obs_pi_value1, next_obs_pi_value1, random_value1], 1)

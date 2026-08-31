@@ -53,7 +53,6 @@ def get_args():
 
     parser.add_argument("--epoch", type=int, default=1000)
     parser.add_argument("--step-per-epoch", type=int, default=1000)
-    parser.add_argument("--eval_episodes", type=int, default=10)
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
 
@@ -198,7 +197,6 @@ def run_exp(config):
     # create policy trainer
     policy_trainer = MBPolicyTrainer(
         policy=policy,
-        eval_env=env,
         real_buffer=real_buffer,
         fake_buffer=fake_buffer,
         logger=logger,
@@ -206,16 +204,14 @@ def run_exp(config):
         epoch=args_for_exp.epoch,
         step_per_epoch=args_for_exp.step_per_epoch,
         batch_size=args_for_exp.batch_size,
-        real_ratio=args_for_exp.real_ratio,
-        eval_episodes=args_for_exp.eval_episodes
+        real_ratio=args_for_exp.real_ratio
     )
 
     # train
     if not load_dynamics_model:
         dynamics.train(real_buffer.sample_all(), logger)
     
-    result = policy_trainer.train()
-    tune.report(**result)
+    policy_trainer.train()
 
 
 if __name__ == "__main__":

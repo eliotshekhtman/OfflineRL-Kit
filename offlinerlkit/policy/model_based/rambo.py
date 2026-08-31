@@ -76,9 +76,11 @@ class RAMBOPolicy(MOPOPolicy):
         for i_epoch in range(n_epoch):
             np.random.shuffle(idxs)
             sum_loss = 0
-            for i_batch in range(sample_num // batch_size):
-                batch_obs = observations[i_batch * batch_size: (i_batch + 1) * batch_size]
-                batch_act = actions[i_batch * batch_size: (i_batch + 1) * batch_size]
+            batch_count = 0
+            for start in range(0, sample_num, batch_size):
+                batch_idxs = idxs[start: start + batch_size]
+                batch_obs = observations[batch_idxs]
+                batch_act = actions[batch_idxs]
                 batch_obs = torch.from_numpy(batch_obs).to(self.device)
                 batch_act = torch.from_numpy(batch_act).to(self.device)
                 dist = self.actor(batch_obs)
@@ -89,7 +91,8 @@ class RAMBOPolicy(MOPOPolicy):
                 bc_loss.backward()
                 self._bc_optim.step()
                 sum_loss += bc_loss.cpu().item()
-            print(f"Epoch {i_epoch}, mean bc loss {sum_loss/i_batch}")
+                batch_count += 1
+            logger.log(f"Epoch {i_epoch}, mean bc loss {sum_loss / batch_count}")
         torch.save(self.state_dict(), os.path.join(logger.model_dir, "rambo_pretrain.pth"))
 
     def update_dynamics(

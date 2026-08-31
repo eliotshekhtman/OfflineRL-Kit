@@ -244,10 +244,10 @@ HANDLER = {
 
 
 class Logger(object):
-    def __init__(self, dir: str, ouput_config: Dict) -> None:
+    def __init__(self, dir: str, ouput_config: Dict, console_output: bool = True) -> None:
         self._dir = dir
         self._init_dirs()
-        self._init_ouput_handlers(ouput_config)
+        self._init_ouput_handlers(ouput_config, console_output)
         self._name2val = defaultdict(float)
         self._name2cnt = defaultdict(int)
         self._level = INFO
@@ -263,15 +263,15 @@ class Logger(object):
         os.mkdir(self._model_dir)
         os.mkdir(self._result_dir)
     
-    def _init_ouput_handlers(self, output_config: Dict) -> None:
+    def _init_ouput_handlers(self, output_config: Dict, console_output: bool) -> None:
         self._output_handlers = []
         for file_name, fmt in output_config.items():
             try:
                 self._output_handlers.append(HANDLER[fmt](os.path.join(self._record_dir, file_name)))
             except KeyError:
                 warnings.warn("Invalid output type, Valid types: stdout, csv, tensorboard", DeprecationWarning)
-        # default output to console
-        self._output_handlers.append(StandardOutputHandler(sys.stdout))
+        if console_output:
+            self._output_handlers.append(StandardOutputHandler(sys.stdout))
     
     def log_hyperparameters(self, hyper_param: Dict) -> None:
         json_output_handler = JSONOutputHandler(os.path.join(self._record_dir, "hyper_param"))
